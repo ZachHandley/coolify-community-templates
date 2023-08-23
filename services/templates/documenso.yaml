@@ -1,0 +1,123 @@
+templateVersion: 1.0.0
+defaultVersion: 0.9.0
+documentation: https://github.com/documenso/documenso/tree/main
+type: documenso
+name: Documenso
+description: The Open Source DocuSign Alternative
+labels:
+  - document signer
+  - esign
+  - e-sign
+  - docusign
+  - open source
+services:
+  $$id-postgres:
+    database:
+      image: postgres:$$config_postgres_db_version
+      environment:
+        - POSTGRES_USER=$$config_postgres_db_user
+        - POSTGRES_PASSWORD=$$config_postgres_db_pass
+        - POSTGRES_DB=documenso
+      ports:
+        - 5432:5432
+
+    inbucket:
+      image: inbucket/inbucket
+      ports:
+        - 9000:9000
+        - 2500:2500
+        - 1100:1100
+
+    $$id:
+      image: node:18
+      working_dir: /app
+      command: ./docker/compose-entrypoint.sh
+      depends_on:
+        - database
+        - inbucket
+      environment:
+        - DATABASE_URL=postgres://$$config_postgres_db_user:$$config_postgres_db_pass@$$id-postgresql:5432/documenso
+        - NEXT_PUBLIC_WEBAPP_URL=$$config_webapp_url
+        - NEXTAUTH_SECRET=$$config_nextauth_secret
+        - NEXTAUTH_URL=$$config_webapp_url
+        - SENDGRID_API_KEY=$$config_sendgrid_api_key
+        - SMTP_MAIL_HOST=$$config_smtp_mail_host
+        - SMTP_MAIL_PORT=$$config_smtp_mail_port
+        - SMTP_MAIL_USER=$$config_smtp_mail_user
+        - SMTP_MAIL_PASSWORD=$$config_smtp_mail_password
+        - MAIL_FROM=$$config_mail_from
+        - NEXT_PUBLIC_ALLOW_SIGNUP=$$config_allow_public_signup
+      ports:
+        - 3000:3000
+      volumes:
+        - ../:/app
+variables:
+  - id: $$config_allow_public_signup
+    name: NEXT_PUBLIC_ALLOW_SIGNUP
+    label: Allow Public Signup
+    defaultValue: false
+    description: "Allow public signup for Documenso"
+    showOnConfiguration: true
+  - id: $$config_sendgrid_api_key
+    name: SENDGRID_API_KEY
+    label: SendGrid API Key
+    defaultValue: ""
+    description: "Your API key for SendGrid (if wanted)"
+    showOnConfiguration: true
+  - id: $$config_smtp_mail_host
+    name: SMTP_MAIL_HOST
+    label: SMTP Mail Host
+    defaultValue: ""
+    description: "SMTP Mail Host"
+    showOnConfiguration: true
+  - id: $$config_smtp_mail_port
+    name: SMTP_MAIL_PORT
+    label: SMTP Mail Port
+    defaultValue: ""
+    description: "SMTP Mail Port"
+    showOnConfiguration: true
+  - id: $$config_smtp_mail_user
+    name: SMTP_MAIL_USER
+    label: SMTP Mail User
+    defaultValue: ""
+    description: "SMTP Mail User"
+    showOnConfiguration: true
+  - id: $$config_smtp_mail_password
+    name: SMTP_MAIL_PASSWORD
+    label: SMTP Mail Password
+    defaultValue: ""
+    description: "SMTP Mail Password"
+    showOnConfiguration: true
+  - id: $$config_mail_from
+    name: MAIL_FROM
+    label: Mail From
+    defaultValue: ""
+    description: "Mail From Address (where does it send from?)"
+    showOnConfiguration: true
+  - id: $$secret_database_url
+    name: DATABASE_URL
+    label: Database URL for PostgreSQL
+    defaultValue: >-
+      postgresql://$$config_postgres_db_user:$$config_postgres_db_pass@$$id-postgresql:5432/$$config_postgres_db
+    description: ""
+  - id: $$secret_hash_salt
+    name: HASH_SALT
+    label: Hash Salt
+    defaultValue: $$generate_hex(64)
+    description: "Unsure if needed but doubtful"
+  - id: $$config_postgres_db_user
+    name: POSTGRES_USER
+    label: PostgreSQL User
+    defaultValue: $$generate_username
+    description: "PostgreSQL DB User Name"
+  - id: $$config_postgres_db_pass
+    name: POSTGRES_PASSWORD
+    label: PostgreSQL Password
+    defaultValue: $$generate_password
+    description: "PostgreSQL DB User Password"
+  - id: $$config_nextauth_secret
+    name: NEXTAUTH_SECRET
+    label: Next Auth Secret Key for Documenso
+    defaultValue: $$generate_password
+    description: "Secret key for Documenso, only need to worry if you want to set it specifically"
+    showOnConfiguration: true
